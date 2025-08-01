@@ -1,0 +1,36 @@
+name: Black Duck Scan
+
+on:
+  workflow_dispatch:
+  
+env:
+  BLACKDUCK_FOLDER: "/home/runner/work/helloworld/blackduck"
+  BLACKDUCK_OUTPUT: "/home/runner/work/helloworld/blackduck/output"
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download sample file and Detect jar
+        run: |
+          curl -L -o webgoat-server-8.2.2.jar https://github.com/WebGoat/WebGoat/releases/download/v8.2.2/webgoat-server-8.2.2.jar
+          mkdir -p $BLACKDUCK_OUTPUT
+          mkdir -p $BLACKDUCK_FOLDER
+          curl -L -o $BLACKDUCK_FOLDER/detect-10.5.0.jar https://repo.blackduck.com/bds-integrations-release/com/blackduck/integration/detect/10.5.0/detect-10.5.0.jar
+
+      - name: Run Black Duck Detect
+        run: |
+          java -jar $BLACKDUCK_FOLDER/detect-10.5.0.jar \
+            --blackduck.url="https://kmstech.duckdns.org:31443/" \
+            --blackduck.api.token=${{ secrets.BLACKDUCK_API_TOKEN }} \
+            --blackduck.trust.cert=true \
+            --detect.project.name="TEST_GithubAction" \
+            --detect.project.version.name="1" \
+            --detect.source.path=./ \
+            --detect.output.path=$BLACKDUCK_OUTPUT \
+            --detect.detector.search.depth=5 \
+            --detect.accuracy.required=NONE \
+            --detect.cleanup=false
